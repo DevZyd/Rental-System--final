@@ -27,6 +27,7 @@ def setup_database():
 
 class Rental_System:
     def __init__(self,root):
+        self.book_title = None
         self.root = root
         self.root.title("Login")
         self.root.configure(bg='white')
@@ -118,7 +119,8 @@ class Rental_System:
         email = self.login_entry_email.get()
         password = self.login_entry_password.get()
 
-        self.conn = sqlite3.connect('rental_system.db')
+        self.conn = sqlite3.connect(
+            'rental_system.db')
         self.cursor = self.conn.cursor()
         self.cursor.execute('SELECT * FROM user WHERE email = ? AND password = ?', (email, password))
         row = self.cursor.fetchone()
@@ -299,19 +301,88 @@ class Rental_System:
             else:
                 cover_url = "No cover available"
 
-    def open_book_details(self,book):
+    def open_book_details(self, book):
         details_window = tk.Tk()
         details_window.title(book['title'])
         details_window.geometry("300x500+500+150")
         details_window.resizable(0, 0)
 
-        top_frame = tk.Frame(root, bg='white', width=290, height=210)
-        top_frame.place(x=5, y=5)
+        # Create a frame for book details
+        details_frame = tk.Frame(details_window, bg="#F2F2F2", bd=2, relief="flat")
+        details_frame.pack(fill="both", expand=True, padx=10, pady=10)
 
-        display_frame = customtkinter.CTkFrame(root, fg_color='grey', width=300, height=300, corner_radius=20)
-        display_frame.place(x=0, y=210, )
+        # Back Button (Top-Left)
+        back_button = tk.Button(details_window, text="← Back", font=("Arial", 10, "bold"), bg="lightGray", fg="black",
+                                padx=10, pady=5, command=details_window.destroy)
+        back_button.place(x=10, y=10)  # Position at the top-left
+
+        # Initialize cart count if not already set
+        if not hasattr(self, "cart_count"):
+             self.cart_count = 0
+
+        # Load Book Cover
+        if 'cover_i' in book:
+            cover_url = f"https://covers.openlibrary.org/b/id/{book['cover_i']}-M.jpg"
+            response = requests.get(cover_url)
+            if response.status_code == 200:
+                image_data = response.content
+                image = Image.open(io.BytesIO(image_data))
+                image.thumbnail((150, 200))
+                photo = ImageTk.PhotoImage(image)
+
+                cover_label = tk.Label(details_frame, image=photo, bg='white')
+                cover_label.image = photo  # Keep reference
+                cover_label.pack(pady=10)
+
+        # Book Title
+        title_label = tk.Label(details_frame, text=book['title'], font=("Arial", 14, "bold"), bg='#F2F2F2', wraplength=350)
+        title_label.pack(anchor="w", padx=10)
+
+        # Author Name
+        author_name = book.get('authors', [{'name': 'Unknown Author'}])[0]['name']
+        author_label = tk.Label(details_frame, text=f"Author: {author_name}", font=("Arial", 10), bg='#F2F2F2')
+        author_label.pack(anchor="w", padx=10)
+
+        book_genre = tk.Label(details_frame, text="Genre: Fantasy, Drama, Action", font=('Arial', 10, 'bold'),bg="#F2F2F2")
+        book_genre.pack(anchor="w", padx=10)
+
+        # Fetch and Display Synopsis Dynamically
+        synopsis_text = book.get('description', "No synopsis available for this book.")
+
+        if isinstance(synopsis_text, dict):  # Sometimes OpenLibrary returns a dict
+            synopsis_text = synopsis_text.get('value', "No synopsis available.")
+
+        synopsis_label = tk.Label(details_frame, text=synopsis_text, font=('Arial', 9), wraplength=350, justify="left",
+                                  bg="#F2F2F2")
+        synopsis_label.pack(pady=(10, 10), padx=10)
+
+    def add_to_cart(self, details_frame):
+
+        self.cart_count += 1  # Increment cart count
+        self.cart_count_label.config(text=str(self.cart_count))  # Update cart count display
+        messagebox.showinfo("Rent Book", "Book added to cart for rental!")  # Show message
+
+        # Buttons Frame (for Rent and Buy Now)
+        buttons_frame = tk.Frame(details_frame, bg="#F2F2F2")
+        buttons_frame.pack(pady=10)
+
+        # Rent Button
+        rent_button = tk.Button(buttons_frame, text="📖 Rent", font=("Arial", 10, "bold"),
+                                bg="#E0E0E0", fg="black", padx=10, pady=5, width=10,
+                                command=self.rent_action)
+        rent_button.pack(side="left", padx=5)
+
+        buy_button = tk.Button(buttons_frame, text="🛒 Buy Now", font=("Arial", 10, "bold"),
+                               bg="#FFD700", fg="black", padx=10, pady=5, width=10,
+                               command=self.buy_action)
+        buy_button.pack(side="left", padx=5)
 
 
+    def rent_action(self):
+        messagebox.showinfo("Rent Book", "The book has been rented successfully!")
+
+    def buy_action(self):
+        messagebox.showinfo("Buy Book", "You have purchased the book successfully!")
 
 root = tk.Tk()
 app = Rental_System(root)
