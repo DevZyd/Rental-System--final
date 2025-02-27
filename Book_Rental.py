@@ -23,7 +23,7 @@ def setup_database():
     conn.commit()
     conn.close()
 
-    setup_database()
+setup_database()
 
 class Rental_System:
     def __init__(self,root):
@@ -143,7 +143,7 @@ class Rental_System:
         conn = sqlite3.connect('rental_system.db')
         cursor = conn.cursor()
 
-        if username == "" or password == "" or email == "":
+        if username == "" or email == "" or password == "":
             messagebox.showerror("Error", "Please fill in all fields!")
         else:
             try:
