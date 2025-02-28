@@ -303,22 +303,42 @@ class Rental_System:
 
     def open_book_details(self, book):
         details_window = tk.Tk()
-        details_window.title(book['title'])
+        details_window.title(book['title'])    
         details_window.geometry("300x500+500+150")
         details_window.resizable(0, 0)
 
+        
         # Create a frame for book details
         details_frame = tk.Frame(details_window, bg="#F2F2F2", bd=2, relief="flat")
         details_frame.pack(fill="both", expand=True, padx=10, pady=10)
 
+        # Back and Cart Frame (Top Bar)
+        top_frame = tk.Frame(details_window, bg="#F2F2F2")
+        top_frame.place(relx=0.5, rely=0.02, anchor="n", relwidth=1)  # Full width at the top
+
         # Back Button (Top-Left)
-        back_button = tk.Button(details_window, text="← Back", font=("Arial", 10, "bold"), bg="lightGray", fg="black",
-                                padx=10, pady=5, command=details_window.destroy)
-        back_button.place(x=10, y=10)  # Position at the top-left
+        back_button = tk.Button(top_frame, text="← Back", font=("Arial", 10, "bold"),
+                                bg="lightGray", fg="black", padx=10, pady=5,
+                                command=details_window.destroy)
+        back_button.pack(side="left", padx=10, pady=5)
+
+        # Cart Count (Top-Right)
+        cart_frame = tk.Frame(top_frame, bg="#F2F2F2")
+        cart_frame.pack(side="right", padx=10, pady=5)
+
+        cart_icon = tk.Label(cart_frame, text="🛒", font=("Arial", 12))  # Cart Icon
+        cart_icon.pack(side="left")
+
+        self.cart_count_label = tk.Label(cart_frame, text=str(self.cart_count), font=("Arial", 10, "bold"),
+                                         bg="white", fg="black", width=3)
+        self.cart_count_label.pack(side="left", padx=5)
 
         # Initialize cart count if not already set
         if not hasattr(self, "cart_count"):
-             self.cart_count = 0
+            self.cart_count = 0
+        self.cart_count += 1  # Increment cart count
+        self.cart_count_label.config(text=str(self.cart_count))  # Update cart count display
+        messagebox.showinfo("Rent Book", "Book added to cart for rental!")  # Show message
 
         # Load Book Cover
         if 'cover_i' in book:
@@ -332,19 +352,27 @@ class Rental_System:
 
                 cover_label = tk.Label(details_frame, image=photo, bg='white')
                 cover_label.image = photo  # Keep reference
-                cover_label.pack(pady=10)
+                cover_label.place(x=0, y=0)
+
+        # Book Details Frame (Encapsulates Title, Author, Genre, and Synopsis)
+        book_details_frame = tk.Frame(details_frame, bg="#F2F2F2", padx=10, pady=10)
+        book_details_frame.place(relx=0.05, rely=0.1, relwidth=0.9)
 
         # Book Title
-        title_label = tk.Label(details_frame, text=book['title'], font=("Arial", 14, "bold"), bg='#F2F2F2', wraplength=350)
-        title_label.pack(anchor="w", padx=10)
+        title_label = tk.Label(book_details_frame, text=book['title'], font=("Arial", 14, "bold"),
+                               bg='#F2F2F2', wraplength=350)
+        title_label.place(x=10, y=10)
 
         # Author Name
         author_name = book.get('authors', [{'name': 'Unknown Author'}])[0]['name']
-        author_label = tk.Label(details_frame, text=f"Author: {author_name}", font=("Arial", 10), bg='#F2F2F2')
-        author_label.pack(anchor="w", padx=10)
+        author_label = tk.Label(book_details_frame, text=f"Author: {author_name}", font=("Arial", 10),
+                                bg='#F2F2F2')
+        author_label.place(x=10, y=40)
 
-        book_genre = tk.Label(details_frame, text="Genre: Fantasy, Drama, Action", font=('Arial', 10, 'bold'),bg="#F2F2F2")
-        book_genre.pack(anchor="w", padx=10)
+        # Book Genre
+        book_genre = tk.Label(book_details_frame, text="Genre: Fantasy, Drama, Action",
+                              font=('Arial', 10, 'bold'), bg="#F2F2F2")
+        book_genre.place(x=10, y=70)
 
         # Fetch and Display Synopsis Dynamically
         synopsis_text = book.get('description', "No synopsis available for this book.")
@@ -352,38 +380,34 @@ class Rental_System:
         if isinstance(synopsis_text, dict):  # Sometimes OpenLibrary returns a dict
             synopsis_text = synopsis_text.get('value', "No synopsis available.")
 
-        synopsis_label = tk.Label(details_frame, text=synopsis_text, font=('Arial', 9), wraplength=350, justify="left",
-                                  bg="#F2F2F2")
-        synopsis_label.pack(pady=(10, 10), padx=10)
+        synopsis_label = tk.Label(book_details_frame, text=synopsis_text, font=('Arial', 9),
+                                  wraplength=350, justify="left", bg="#F2F2F2")
+        synopsis_label.place(x=10, y=100, width=330)
 
     def add_to_cart(self, details_frame):
 
-        self.cart_count += 1  # Increment cart count
-        self.cart_count_label.config(text=str(self.cart_count))  # Update cart count display
-        messagebox.showinfo("Rent Book", "Book added to cart for rental!")  # Show message
-
         # Buttons Frame (for Rent and Buy Now)
         buttons_frame = tk.Frame(details_frame, bg="#F2F2F2")
-        buttons_frame.pack(pady=10)
+        buttons_frame.place(x=10, y=10)  # Adjust x and y as needed
 
         # Rent Button
         rent_button = tk.Button(buttons_frame, text="📖 Rent", font=("Arial", 10, "bold"),
                                 bg="#E0E0E0", fg="black", padx=10, pady=5, width=10,
                                 command=self.rent_action)
-        rent_button.pack(side="left", padx=5)
+        rent_button.place(x=0, y=0)  # Adjust x and y as needed
 
+        # Buy Button
         buy_button = tk.Button(buttons_frame, text="🛒 Buy Now", font=("Arial", 10, "bold"),
                                bg="#FFD700", fg="black", padx=10, pady=5, width=10,
                                command=self.buy_action)
-        buy_button.pack(side="left", padx=5)
-
+        buy_button.place(x=100, y=0)  # Adjust x based on button width
 
     def rent_action(self):
         messagebox.showinfo("Rent Book", "The book has been rented successfully!")
 
     def buy_action(self):
         messagebox.showinfo("Buy Book", "You have purchased the book successfully!")
-
+     
 root = tk.Tk()
 app = Rental_System(root)
 root.geometry("300x500+500+150")
